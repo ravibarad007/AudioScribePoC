@@ -22,6 +22,9 @@ jobs:
     - name: Make gradlew executable
       run: chmod +x ./gradlew || true
 
+    - name: Fix Termux AAPT2 path for cloud
+      run: sed -i '/aapt2FromMavenOverride/d' gradle.properties || true
+
     - name: Build Debug APK
       run: bash ./gradlew assembleDebug || gradle assembleDebug
 
