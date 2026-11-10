@@ -58,7 +58,7 @@ android {
 
     externalNativeBuild {
         cmake {
-            path = "src/main/cpp/CMakeLists.txt"
+            path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
         }
     }
@@ -117,7 +117,7 @@ dependencies {
 // Add at END of android { } block (before dependencies { })
 // externalNativeBuild {
 //     cmake {
-//         path = "src/main/cpp/CMakeLists.txt"
+//         path = file("src/main/cpp/CMakeLists.txt")
 //         version = "3.22.1"
 //     }
 // }
