@@ -1,47 +1,29 @@
 cmake_minimum_required(VERSION 3.22.1)
 project("whisper_jni" LANGUAGES CXX)
 
-# 1. Use whisper.cpp as SUBDIRECTORY (not FetchContent) — guarantees target visibility
-# We'll clone it at configure time via ExternalProject (works in CI)
-include(ExternalProject)
-
-# 2. Download & build whisper.cpp as external project
-ExternalProject_Add(
-    whisper_external
-    GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp
-    GIT_TAG v1.5.4
-    SOURCE_DIR ${CMAKE_BINARY_DIR}/whisper-src
-    BINARY_DIR ${CMAKE_BINARY_DIR}/whisper-build
-    CMAKE_ARGS
-        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-        -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
-        -DANDROID_ABI=${ANDROID_ABI}
-        -DANDROID_PLATFORM=${ANDROID_PLATFORM}
-        -DCMAKE_BUILD_TYPE=Release
-        -DBUILD_SHARED_LIBS=ON
-        -DWHISPER_BUILD_TESTS=OFF
-        -DWHISPER_BUILD_EXAMPLES=OFF
-    BUILD_IN_SOURCE 0
-    INSTALL_DIR ${CMAKE_BINARY_DIR}/whisper-install
+# 1. Fetch whisper.cpp at configure time
+include(FetchContent)
+FetchContent_Declare(
+  whisper
+  GIT_REPOSITORY https://github.com/ggerganov/whisper.cpp
+  GIT_TAG        v1.5.4
 )
+FetchContent_MakeAvailable(whisper)
 
-# 2. Get whisper library location (built by ExternalProject)
-ExternalProject_Get_Property(whisper_external INSTALL_DIR)
-set(WHISPER_INSTALL_DIR ${INSTALL_DIR})
+# 2. Verify whisper target exists (it's called "whisper", not "whisper::whisper")
+if(NOT TARGET whisper)
+    message(FATAL_ERROR "whisper target not found! Check whisper.cpp CMakeLists.txt")
+endif()
 
-# 3. Our JNI wrapper — depends on whisper_external
+# 3. Our JNI wrapper
 add_library(whisper_jni SHARED whisper_jni.cpp)
 
-# Link to whisper library (built by ExternalProject)
-add_dependencies(whisper_jni whisper_external)
-target_link_libraries(whisper_jni
-    ${WHISPER_INSTALL_DIR}/lib/libwhisper.so
-    ${log-lib}
-)
+# 3. Link to whisper.cpp's target (name is "whisper", not "whisper::whisper")
+target_link_libraries(whisper_jni PRIVATE whisper ${log-lib})
 
-# Include dirs
+# 4. Include directories (whisper.cpp headers)
 target_include_directories(whisper_jni PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${WHISPER_INSTALL_DIR}/include
+    ${whisper_SOURCE_DIR}/include
+    ${whisper_BINARY_DIR}/include
 )
