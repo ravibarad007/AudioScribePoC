@@ -1,4 +1,20 @@
 package com.audioscribe.poc.ui.screens
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.Modifier
+import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.*
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

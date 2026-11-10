@@ -237,10 +237,10 @@ class ModelDownloadManager private constructor(
      */
     fun getModelSizeString(): String {
         val bytes = modelFile.length()
-        return formatBytes(bytes)
+        return Formatter.formatBytes(bytes)
     }
     
-    companion object {
+    object Formatter {
         fun formatBytes(bytes: Long): String {
             return when {
                 bytes >= 1024L * 1024 * 1024 -> String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024))

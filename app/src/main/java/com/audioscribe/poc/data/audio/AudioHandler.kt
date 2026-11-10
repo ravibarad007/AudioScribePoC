@@ -59,7 +59,7 @@ class AudioHandler(private val context: Context) {
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to start recording", e)
                 release()
-                return@apply Result.failure(e)
+                return Result.failure(e)
             }
         }
         
@@ -134,7 +134,7 @@ class AudioHandler(private val context: Context) {
                 }
             } ?: return@withContext Result.failure(IllegalArgumentException("Could not open input stream"))
             
-            if (!destFile.exists() || destFile.length() == 0) {
+            if (!destFile.exists() || destFile.length() == 0L) {
                 destFile.delete()
                 return@withContext Result.failure(IllegalStateException("Imported file is empty"))
             }

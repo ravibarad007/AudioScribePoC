@@ -58,7 +58,7 @@ class WhisperTranscriber(private val context: Context) {
         
         // In a real implementation, this would call the JNI native method:
         // nativeContext = whisperInit(modelPath)
-        // isInitialized = nativeContext != 0
+        // isInitialized = nativeContext != 0L
         
         // For PoC, we simulate initialization
         this.modelPath = modelPath
@@ -132,7 +132,7 @@ class WhisperTranscriber(private val context: Context) {
      * Release native resources
      */
     fun release() {
-        if (isInitialized && nativeContext != 0) {
+        if (isInitialized && nativeContext != 0L) {
             // In real implementation: whisperFree(nativeContext)
             nativeContext = 0
             isInitialized = false
