@@ -1,399 +1,227 @@
 package com.audioscribe.poc.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Surface
-import com.audioscribe.poc.ui.theme.AppSurface
-import com.audioscribe.poc.ui.theme.AppTheme
-import com.audioscribe.poc.ui.viewmodel.AudioScribeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import kotlinx.coroutines.launch
+import com.audioscribe.poc.R
+import com.audioscribe.poc.ui.theme.AppSurface
+import com.audioscribe.poc.ui.viewmodel.AudioScribeViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun RecordScreen(
     viewModel: AudioScribeViewModel = viewModel(),
-    onBack: () -> Unit,
-    onTranscriptSaved: (String) -> Unit
+    onBackClick: () -> Unit
 ) {
-    val isRecording by viewModel.isRecording.observeAsState()
-    val recordingDuration by viewModel.recordingDuration.observeAsState()
-    val transcriptionState by viewModel.transcriptionState.observeAsState()
-    
-    val showTranscript by remember { mutableStateOf(false) }
-    val transcriptText by remember { mutableStateOf("") }
-    
-    // Handle transcription completion
-    androidx.compose.runtime.LaunchedEffect(transcriptionState) {
-        when (transcriptionState) {
-            is AudioScribeViewModel.TranscriptionState.Completed -> {
-                transcriptText = transcriptionState.transcript.transcriptText
-                showTranscript = true
-            }
-            is AudioScribeViewModel.TranscriptionState.Error -> {
-                // Error handled in UI
-            }
-            else -> {}
-        }
-    }
-    
-    AppSurface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Top bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-                
-                Text(
-                    text = stringResource(id = com.audioscribe.poc.R.string.record_title),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                
-                // Spacer for balance
-                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.width(48.dp))
-            }
-            
-            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(32.dp))
-            
-            if (showTranscript) {
-                // Show transcript result
-                TranscriptResultCard(
-                    transcriptText = transcriptText,
-                    onSave = {
-                        onTranscriptSaved(transcriptText)
-                        showTranscript = false
-                    },
-                    onDiscard = {
-                        showTranscript = false
-                        // Reset transcription state
-                    },
-                    onCopy = {
-                        android.content.ClipboardManager.getSystemService(
-                            android.content.Context.CLIPBOARD_SERVICE
-                        )?.setPrimaryClip(
-                            android.content.ClipData.newPlainText("transcript", transcriptText)
-                        )
-                    }
-                )
-            } else {
-                // Recording interface
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Recording visualization
-                    Box(
-                        modifier = Modifier.size(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        // Outer pulse ring when recording
-                        if (isRecording) {
-                            RecordingPulseRing()
-                        }
-                        
-                        // Main record button
-                        Button(
-                            onClick = {
-                                if (isRecording) {
-                                    val result = viewModel.stopRecording()
-                                    if (result.isSuccess) {
-                                        viewModel.transcribeRecording(result.getOrThrow())
-                                    }
-                                } else {
-                                    viewModel.startRecording()
-                                }
-                            },
-                            modifier = Modifier.size(140.dp),
-                            shape = RoundedCornerShape(70.dp),
-                            colors = if (isRecording) {
-                                androidx.compose.material3.ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.error
-                                )
-                            } else {
-                                androidx.compose.material3.ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        ) {
-                            Icon(
-                                imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
-                                contentDescription = if (isRecording) "Stop recording" else "Start recording",
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(32.dp)
-                            )
-                        }
-                    }
-                    
-                    androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(24.dp))
-                    
-                    // Duration display
-                    Text(
-                        text = formatDuration(recordingDuration),
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                    )
-                    
-                    androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
-                    
-                    Text(
-                        text = if (isRecording) "Recording..." else "Tap to start recording",
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    
-                    androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(32.dp))
-                    
-                    // Transcription state
-                    when (transcriptionState) {
-                        is AudioScribeViewModel.TranscriptionState.Processing -> {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp),
-                                colors = androidx.compose.material3.CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(24.dp),
-                                        strokeWidth = 3.dp
-                                    )
-                                    androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(16.dp))
-                                    Text(
-                                        text = transcriptionState.progress,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                }
-                            }
-                        }
-                        is AudioScribeViewModel.TranscriptionState.Error -> {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 24.dp),
-                                colors = androidx.compose.material3.CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Error,
-                                        contentDescription = "Error",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                    androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(16.dp))
-                                    Text(
-                                        text = transcriptionState.message,
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
-                            }
-                        }
-                        else -> {}
-                    }
-                }
-            }
-        }
-    }
-}
+    val isRecording by viewModel.isRecording.observeAsState(false)
+    val recordingDuration by viewModel.recordingDuration.observeAsState(0L)
+    val transcriptionState by viewModel.transcriptionState.observeAsState(AudioScribeViewModel.TranscriptionState.Idle)
 
-@Composable
-fun TranscriptResultCard(
-    transcriptText: String,
-    onSave: () -> Unit,
-    onDiscard: () -> Unit,
-    onCopy: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp)
-            .height(300.dp),
-        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
+    var lastRecordedPath by remember { mutableStateOf<String?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AppSurface(modifier = Modifier.fillMaxSize()) {
+        val currentState = transcriptionState
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onBackClick) {
+                    Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+                }
+                Text(
+                    text = "Record Audio",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(start = 16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            when (currentState) {
+                is AudioScribeViewModel.TranscriptionState.Processing -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(80.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.padding(24.dp))
                     Text(
-                        text = "Transcription Result",
+                        text = currentState.progress,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center
+                    )
+                }
+                is AudioScribeViewModel.TranscriptionState.Completed -> {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Success",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(80.dp)
+                    )
+                    Spacer(modifier = Modifier.padding(24.dp))
+                    Text(
+                        text = "Transcription Complete!",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.primary
                     )
-                    
-                    Row {
-                        IconButton(onClick = onCopy) {
-                            Icon(
-                                imageVector = Icons.Filled.ContentCopy,
-                                contentDescription = "Copy transcript",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    Spacer(modifier = Modifier.padding(16.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = currentState.transcript.title,
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 16.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.padding(8.dp))
+                            Text(
+                                text = currentState.transcript.transcriptText,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp,
+                                maxLines = 4,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
-                
-                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
-                
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .fillMaxWidth()
-                        .padding(12.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                ) {
-                    androidx.compose.foundation.layout.Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.Top
+                is AudioScribeViewModel.TranscriptionState.Error -> {
+                    Icon(
+                        imageVector = Icons.Filled.Error,
+                        contentDescription = "Error",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(80.dp)
+                    )
+                    Spacer(modifier = Modifier.padding(24.dp))
+                    Text(
+                        text = "Transcription Failed",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.padding(8.dp))
+                    Text(
+                        text = currentState.message,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.padding(24.dp))
+                    Button(
+                        onClick = {
+                            lastRecordedPath?.let { viewModel.transcribeRecording(it) }
+                        }
                     ) {
+                        Text("Retry Transcription")
+                    }
+                }
+                is AudioScribeViewModel.TranscriptionState.Idle -> {
+                    RecordingTimer(durationMs = recordingDuration, isRecording = isRecording)
+                    Spacer(modifier = Modifier.padding(32.dp))
+                    RecordingButton(
+                        isRecording = isRecording,
+                        onClick = {
+                            if (isRecording) {
+                                val result = viewModel.stopRecording()
+                                if (result.isSuccess) {
+                                    val path = result.getOrNull()
+                                    if (path != null) {
+                                        lastRecordedPath = path
+                                        viewModel.transcribeRecording(path)
+                                    }
+                                } else {
+                                    errorMessage = result.exceptionOrNull()?.message ?: "Failed to stop recording"
+                                }
+                            } else {
+                                val result = viewModel.startRecording()
+                                if (result.isFailure) {
+                                    errorMessage = result.exceptionOrNull()?.message ?: "Failed to start recording"
+                                } else {
+                                    errorMessage = null
+                                }
+                            }
+                        }
+                    )
+                    
+                    errorMessage?.let {
+                        Spacer(modifier = Modifier.padding(24.dp))
                         Text(
-                            text = transcriptText,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 15,
-                            overflow = androidx.compose.ui.text.TextOverflow.Ellipsis
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
             }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(
-                    onClick = onDiscard,
-                    modifier = Modifier.weight(1f),
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Text(text = stringResource(id = com.audioscribe.poc.R.string.record_discard))
-                }
-                
-                Button(
-                    onClick = onSave,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(text = stringResource(id = com.audioscribe.poc.R.string.record_save))
-                }
-            }
+            Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-fun RecordingPulseRing() {
-    // Animated pulsing ring - simplified for PoC
-    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition()
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 0.8f,
-        targetValue = 1.4f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        )
+fun RecordingTimer(durationMs: Long, isRecording: Boolean) {
+    val seconds = (durationMs / 1000) % 60
+    val minutes = (durationMs / (1000 * 60)) % 60
+    val timeString = String.format("%02d:%02d", minutes, seconds)
+    Text(
+        text = timeString,
+        fontSize = 48.sp,
+        fontWeight = FontWeight.Light,
+        color = if (isRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
     )
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 0.1f,
-        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-            animationSpec = androidx.compose.animation.core.tween(1500, easing = androidx.compose.animation.core.LinearEasing),
-            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-        )
-    )
-    
-    androidx.compose.ui.graphics.drawscope.drawCircle(
-        color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
-        center = androidx.compose.ui.geometry.Offset(100.dp.toPx(), 100.dp.toPx()),
-        radius = 100.dp.toPx() * scale
-    )
-}
-
-fun formatDuration(millis: Long): String {
-    val totalSeconds = millis / 1000
-    val minutes = totalSeconds / 60
-    val seconds = totalSeconds % 60
-    return String.format("%02d:%02d", minutes, seconds)
 }
 
 @Composable
-fun stringResource(id: Int): String = androidx.compose.ui.res.stringResource(id)
+fun RecordingButton(isRecording: Boolean, onClick: () -> Unit) {
+    Surface(
+        shape = CircleShape,
+        color = if (isRecording) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer,
+        modifier = Modifier.size(100.dp),
+        onClick = onClick
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (isRecording) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(MaterialTheme.colorScheme.error, RoundedCornerShape(4.dp))
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Mic,
+                    contentDescription = "Record",
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+    }
+}

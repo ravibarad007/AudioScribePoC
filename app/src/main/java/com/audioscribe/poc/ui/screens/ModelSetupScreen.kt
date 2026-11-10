@@ -26,7 +26,7 @@ fun ModelSetupScreen(
     viewModel: AudioScribeViewModel = viewModel(),
     onModelReady: () -> Unit
 ) {
-    val downloadState by viewModel.downloadState.observeAsState(DownloadState.Idle)
+    val downloadState by viewModel.downloadState.observeAsState(DownloadState.Idle())
     val isModelReady by viewModel.isModelReady.observeAsState(false)
 
     LaunchedEffect(isModelReady) {
