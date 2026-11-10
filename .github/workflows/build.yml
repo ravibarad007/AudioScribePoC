@@ -4,11 +4,13 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       
       - name: Setup Java 21
         uses: actions/setup-java@v4
@@ -17,14 +19,14 @@ jobs:
           java-version: '21'
           cache: gradle
       
-      - name: Install Android SDK + NDK + CMake
+      - name: Install Android SDK + NDK + CMake + Ninja
         run: |
           SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
           echo "y" | $SDKMGR --licenses
-          $SDKMGR "platforms;android-36" "build-tools;35.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
+          $SDKMGR "platforms;android-36" "build-tools;35.0.0" "ndk;27.0.12077973" "cmake;3.22.1" "ninja"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
       
-      - name: Generate Fresh Gradle Wrapper (8.7 for AGP 8.6)
+      - name: Generate Fresh Gradle Wrapper (8.7)
         run: |
           rm -rf gradle/wrapper
           gradle wrapper --gradle-version 8.7 --distribution-type bin
@@ -32,7 +34,11 @@ jobs:
       
       - name: Build Debug APK
         run: |
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --stacktrace
+      
+      - name: Verify Native Lib in APK
+        run: |
+          unzip -l app/build/outputs/apk/debug/app-debug.apk | grep libwhisper_jni.so || echo "WARNING: libwhisper_jni.so NOT IN APK!"
       
       - name: Upload APK
         uses: actions/upload-artifact@v4
