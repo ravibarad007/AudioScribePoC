@@ -4,7 +4,9 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
     steps:
       - uses: actions/checkout@v4
       
@@ -15,12 +17,13 @@ jobs:
           java-version: '21'
           cache: gradle
       
-      - name: Install Android SDK + NDK + CMake
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 36
-          ndk-version: r26
-          cmake-version: 3.22.1
+      - name: Install Android SDK + NDK + CMake (Manual)
+        run: |
+          # Use pre-installed cmdline-tools (latest)
+          SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          echo "y" | $SDKMGR --licenses
+          $SDKMGR "platforms;android-36" "build-tools;35.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
       
       - name: Build Debug APK
         run: |
