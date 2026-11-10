@@ -1,24 +1,18 @@
 package com.audioscribe.poc
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 
-import android.app.Activity
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -27,45 +21,32 @@ import com.audioscribe.poc.ui.screens.ModelSetupScreen
 import com.audioscribe.poc.ui.screens.RecordScreen
 import com.audioscribe.poc.ui.theme.AppTheme
 import com.audioscribe.poc.ui.viewmodel.AudioScribeViewModel
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-    
     private val viewModel: AudioScribeViewModel by viewModels()
-    
-    // File picker for audio import
+
     private val audioPicker = registerForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
-            viewModel.importAudio(it)
-        }
+        uri?.let { viewModel.importAudio(it) }
     }
-    
-    // Microphone permission request
+
     private val requestMicPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            // Permission granted, recording can start
+            // Permission granted
         }
     }
-    
-    // Storage permission request (for older APIs)
-    private val requestStoragePermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        // Handle storage permission result
-    }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             AppTheme {
                 Surface(
-                    modifier = androidx.compose.ui.Modifier.fillMaxSize(),
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.background
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
                     NavHost(navController, startDestination = "model_setup") {
@@ -79,7 +60,6 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        
                         composable("home") {
                             HomeScreen(
                                 viewModel = viewModel,
@@ -90,20 +70,13 @@ class MainActivity : ComponentActivity() {
                                         requestMicPermission.launch(android.Manifest.permission.RECORD_AUDIO)
                                     }
                                 },
-                                onImportClick = {
-                                    pickAudioFile()
-                                }
+                                onImportClick = { pickAudioFile() }
                             )
                         }
-                        
                         composable("record") {
                             RecordScreen(
                                 viewModel = viewModel,
-                                onBack = { navController.popBackStack() },
-                                onTranscriptSaved = { transcript ->
-                                    navController.popBackStack()
-                                    // Transcript saved, home screen will update automatically
-                                }
+                                onBackClick = { navController.popBackStack() }
                             )
                         }
                     }
@@ -111,26 +84,15 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-    
+
     private fun checkMicPermission(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
             android.Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
     }
-    
+
     private fun pickAudioFile() {
-        // Use audio/* MIME type for audio files
         audioPicker.launch("audio/*")
-    }
-    
-    // Handle permission rationale if needed
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Permission results handled by ActivityResultContracts
     }
 }

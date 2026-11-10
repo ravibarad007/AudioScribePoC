@@ -26,7 +26,7 @@ class AudioScribeViewModel(application: Application) : AndroidViewModel(applicat
     private val audioHandler: AudioHandler = AudioHandler(application)
     private val whisperTranscriber: WhisperTranscriber = WhisperTranscriber.getInstance(application)
 
-    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle())
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle(false))
     val downloadState: LiveData<DownloadState> = _downloadState.asLiveData()
 
     private val _isModelReady = MutableStateFlow(false)
