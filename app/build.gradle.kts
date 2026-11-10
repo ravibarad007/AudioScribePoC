@@ -55,6 +55,16 @@ android {
     buildFeatures {
         compose = true
     }
+
+    externalNativeBuild {
+        cmake {
+            path = "src/main/cpp/CMakeLists.txt"
+            version = "3.22.1"
+        }
+    }
+
+    ndkVersion = "27.0.12077973"
+
 }
 
 dependencies {
@@ -103,3 +113,13 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling:1.6.10")
     debugImplementation("androidx.compose.ui:ui-tooling-preview:1.6.10")
 }
+
+// Add at END of android { } block (before dependencies { })
+// externalNativeBuild {
+//     cmake {
+//         path = "src/main/cpp/CMakeLists.txt"
+//         version = "3.22.1"
+//     }
+// }
+// 
+// ndkVersion = "27.0.12077973"
