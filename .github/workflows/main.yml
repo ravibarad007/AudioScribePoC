@@ -17,17 +17,20 @@ jobs:
           java-version: '21'
           cache: gradle
       
-      - name: Install Android SDK + NDK + CMake (Manual)
+      - name: Install Android SDK + NDK + CMake
         run: |
-          # Use pre-installed cmdline-tools (latest)
           SDKMGR="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
           echo "y" | $SDKMGR --licenses
           $SDKMGR "platforms;android-36" "build-tools;35.0.0" "ndk;27.0.12077973" "cmake;3.22.1"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
       
+      - name: Generate Gradle Wrapper
+        run: |
+          gradle wrapper --gradle-version 8.6 --distribution-type bin
+          chmod +x gradlew
+      
       - name: Build Debug APK
         run: |
-          chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
       
       - name: Upload APK
