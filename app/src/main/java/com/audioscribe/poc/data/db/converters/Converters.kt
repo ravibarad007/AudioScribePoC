@@ -1,8 +1,16 @@
 package com.audioscribe.poc.data.db.converters
 
 import androidx.room.TypeConverter
+import java.util.Date
 
 class Converters {
-    // Add custom type converters here if needed
-    // For now, all our types are primitives supported by Room
+    @TypeConverter
+    fun fromTimestamp(value: Long?): Date? {
+        return value?.let { Date(it) }
+    }
+
+    @TypeConverter
+    fun dateToTimestamp(date: Date?): Long? {
+        return date?.time
+    }
 }
