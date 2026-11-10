@@ -1,72 +1,46 @@
 package com.audioscribe.poc.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.dp
-import com.audioscribe.poc.data.download.DownloadState
-import com.audioscribe.poc.ui.theme.AppSurface
-import com.audioscribe.poc.ui.theme.AppTheme
-import com.audioscribe.poc.ui.viewmodel.AudioScribeViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.channels.Channel
-import java.text.NumberFormat
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.audioscribe.poc.R
+import com.audioscribe.poc.data.download.DownloadState
+import com.audioscribe.poc.ui.theme.AppSurface
+import com.audioscribe.poc.ui.viewmodel.AudioScribeViewModel
 
 @Composable
 fun ModelSetupScreen(
     viewModel: AudioScribeViewModel = viewModel(),
     onModelReady: () -> Unit
 ) {
-    val downloadState by viewModel.downloadState.observeAsState()
-    val isModelReady by viewModel.isModelReady.observeAsState()
-    
-    // Auto-navigate when model is ready
-    androidx.compose.runtime.LaunchedEffect(isModelReady) {
+    val downloadState by viewModel.downloadState.observeAsState(DownloadState.Idle)
+    val isModelReady by viewModel.isModelReady.observeAsState(false)
+
+    LaunchedEffect(isModelReady) {
         if (isModelReady) {
             onModelReady()
         }
     }
-    
+
     AppSurface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
+        val currentState = downloadState
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -74,15 +48,13 @@ fun ModelSetupScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Icon
             Box(
                 modifier = Modifier.size(120.dp),
                 contentAlignment = Alignment.Center
             ) {
-                when {
-                    downloadState is DownloadState.Downloading -> {
+                when (currentState) {
+                    is DownloadState.Downloading -> {
                         CircularProgressIndicator(
-                            strokeWidth = 8.dp,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(120.dp)
                         )
@@ -93,7 +65,7 @@ fun ModelSetupScreen(
                             modifier = Modifier.size(60.dp)
                         )
                     }
-                    downloadState is DownloadState.Completed -> {
+                    is DownloadState.Completed -> {
                         Icon(
                             imageVector = Icons.Filled.CheckCircle,
                             contentDescription = "Download complete",
@@ -101,7 +73,7 @@ fun ModelSetupScreen(
                             modifier = Modifier.size(80.dp)
                         )
                     }
-                    downloadState is DownloadState.Error -> {
+                    is DownloadState.Error -> {
                         Icon(
                             imageVector = Icons.Filled.Error,
                             contentDescription = "Download error",
@@ -111,7 +83,7 @@ fun ModelSetupScreen(
                     }
                     else -> {
                         Icon(
-                            imageVector = Icons.Filed.Info,
+                            imageVector = Icons.Filled.Info,
                             contentDescription = "Model info",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(80.dp)
@@ -119,111 +91,91 @@ fun ModelSetupScreen(
                     }
                 }
             }
-            
-            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(24.dp))
-            
-            // Title
+
+            Spacer(modifier = Modifier.padding(24.dp))
+
             Text(
-                text = stringResource(id = com.audioscribe.poc.R.string.model_download_title),
+                text = stringResource(id = R.string.model_download_title),
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
-            
-            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
-            
-            // Subtitle
+
+            Spacer(modifier = Modifier.padding(8.dp))
+
             Text(
-                text = stringResource(id = com.audioscribe.poc.R.string.model_download_subtitle),
+                text = stringResource(id = R.string.model_download_subtitle),
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
-            
-            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(24.dp))
-            
-            // Progress/Status Card
+
+            Spacer(modifier = Modifier.padding(24.dp))
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 0.dp),
-                elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    when (downloadState) {
+                    when (currentState) {
                         is DownloadState.Idle -> {
-                            // Initial state - show info and start button
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filed.Download,
+                                    imageVector = Icons.Filled.Download,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
+                                Spacer(modifier = Modifier.padding(8.dp))
                                 Text(
-                                    text = stringResource(id = com.audioscribe.poc.R.string.model_download_size),
+                                    text = stringResource(id = R.string.model_download_size),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            
-                            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(16.dp))
-                            
+                            Spacer(modifier = Modifier.padding(16.dp))
                             Text(
-                                text = stringResource(id = com.audioscribe.poc.R.string.model_download_note),
+                                text = stringResource(id = R.string.model_download_note),
                                 fontSize = 14.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = TextAlign.Center
                             )
-                            
-                            androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(24.dp))
-                            
+                            Spacer(modifier = Modifier.padding(24.dp))
                             Button(
                                 onClick = { viewModel.downloadModel() },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = "Download Model",
-                                    fontWeight = FontWeight.Medium
-                                )
+                                Text("Download Model", fontWeight = FontWeight.Medium)
                             }
                         }
-                        
+
                         is DownloadState.Downloading -> {
-                            // Show progress
-                            val progress = downloadState.progress
-                            val downloaded = downloadState.bytesDownloaded
-                            val total = downloadState.totalBytes
-                            val speed = downloadState.speedBytesPerSecond
-                            
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            val progress = currentState.progress
+                            val downloaded = currentState.bytesDownloaded
+                            val total = currentState.totalBytes
+                            val speed = currentState.speedBytesPerSecond
+
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 LinearProgressIndicator(
-                                    progress = progress,
+                                    progress = { progress },
                                     modifier = Modifier.fillMaxWidth(),
-                                    strokeWidth = 8.dp,
                                     color = MaterialTheme.colorScheme.primary,
                                     trackColor = MaterialTheme.colorScheme.surfaceVariant
                                 )
-                                
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(16.dp))
-                                
+                                Spacer(modifier = Modifier.padding(16.dp))
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = String.format(
-                                            "%.1f%%",
-                                            progress * 100
-                                        ),
+                                        text = String.format("%.1f%%", progress * 100),
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
@@ -234,9 +186,7 @@ fun ModelSetupScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
-                                
+                                Spacer(modifier = Modifier.padding(8.dp))
                                 if (speed > 0) {
                                     Text(
                                         text = "Speed: ${formatBytes(speed)}/s",
@@ -246,82 +196,72 @@ fun ModelSetupScreen(
                                 }
                             }
                         }
-                        
+
                         is DownloadState.Completed -> {
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    text = stringResource(id = com.audioscribe.poc.R.string.model_download_complete),
+                                    text = stringResource(id = R.string.model_download_complete),
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                                
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
-                                
+                                Spacer(modifier = Modifier.padding(8.dp))
                                 Text(
                                     text = "Model saved to internal storage",
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
-                        
+
                         is DownloadState.Error -> {
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 Text(
                                     text = "Download Failed",
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.error,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                                
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(8.dp))
-                                
+                                Spacer(modifier = Modifier.padding(8.dp))
                                 Text(
-                                    text = downloadState.message,
+                                    text = currentState.message,
                                     fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                                
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(24.dp))
-                                
+                                Spacer(modifier = Modifier.padding(24.dp))
                                 Button(
                                     onClick = { viewModel.retryDownload() },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
-                                        text = stringResource(id = com.audioscribe.poc.R.string.model_download_retry),
+                                        text = stringResource(id = R.string.model_download_retry),
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
                             }
                         }
-                        
+
                         is DownloadState.Paused -> {
-                            Column(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 LinearProgressIndicator(
-                                    progress = downloadState.progress,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    strokeWidth = 8.dp
+                                    progress = { currentState.progress },
+                                    modifier = Modifier.fillMaxWidth()
                                 )
-                                
-                                androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.foundation.layout.padding(16.dp))
-                                
+                                Spacer(modifier = Modifier.padding(16.dp))
                                 Text(
-                                    text = "Download Paused - ${String.format("%.1f%%", downloadState.progress * 100)}",
+                                    text = "Download Paused - ${String.format("%.1f%%", currentState.progress * 100)}",
                                     fontSize = 16.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    textAlign = TextAlign.Center
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
                         }
@@ -329,21 +269,6 @@ fun ModelSetupScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun DownloadProgressRow(
-    label: String,
-    value: String,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = value, color = color, fontWeight = FontWeight.Medium)
     }
 }
 
@@ -355,7 +280,3 @@ fun formatBytes(bytes: Long): String {
         else -> "$bytes B"
     }
 }
-
-// Helper to get string resources
-@Composable
-fun stringResource(id: Int): String = androidx.compose.ui.res.stringResource(id)
